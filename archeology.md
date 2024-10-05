@@ -40,10 +40,127 @@ case를 하나하나 해석하다보니 동작하는 방식이 어셈블리와 �
 
 ![image](https://github.com/user-attachments/assets/66fda2d9-cdef-4e53-a702-6cfb849841c9)
 
-
-![image](https://github.com/user-attachments/assets/52670324-9018-4c56-aeda-15f8843c4cd5)
-
+![image](https://github.com/user-attachments/assets/fbf75218-89f7-4d72-845a-2b0888b8ffd4)
 
 0 : 레지스터에 특정값을 저장한다.
 1 : 두 레지스터값을 XOR한다.
-2 : 레지스터
+2 : 레지스터값을 left rotate한다.
+3 : 레지스터에 sbox에 넣은 특정값을 저장한다.
+4 : 메모리에 레지스터값을 저장한다.
+5 : 레지스터에 메모리값을 저장한다.
+6 : 레지스터값을 출력한다.
+7 : 프로그램 동작을 중지한다.
+8 : 레지스터값을 right rotate한다.
+
+즉, 0 1 input[1] 0 0 AA 8 1 3 3 1 1 1 0 2 1 3 이라고 한다면,
+
+reg[1]에 input[1]을 저장하고,
+
+reg[0]에 AA를 저장하고,
+
+reg[1]을 3만큼 shr하고,
+
+reg[1]에 sbox[reg[1]]을 저장하고,
+
+reg[1]에 reg[1]^reg[0]을 저장하고,
+
+reg[1]을 3만큼 shl한다.
+
+![image](https://github.com/user-attachments/assets/5cc96b9b-c9be-47c9-86e8-69fef142834d)
+
+이후에 메모리에 저장된 값을 washing_machine함수에 다시 넣고,
+hieroglyphs.txt를 읽어 stream에 저장한다.
+
+for문으로 hieroglyphs.txt를 256줄까지 읽으며, 각 줄은 255글자까지 읽어 v16에 저장한다.
+문자열에 newline이 있다면 이를 null로 대체한다.
+다음 for문으로 memory의 문자를 인덱스로 v16에 저장된 글자를 프린트한다.
+일종의 치환암호 방식으로 생각된다.
+
+이 모든 과정을 역순으로 수행하면 평문을 구할 수 있을 것으로 보인다.
+
+'''
+def wmInv(input):
+    inputLen = len(input)
+    input = input[::-1]
+
+    for i in range(inputLen -1, 0, -1):
+        input[i] ^= input[i-1]
+
+    return input
+
+def runnnnInv(input):
+    for i in range(0, len(input)):
+        for j in range(9, -1, -1):
+            input[i] = ((input[i] >> 3) | (input[i] << 5)) & 0xff
+            input[i] ^= xor[j%5]
+            input[i] = sboxInv[input[i]]
+            input[i] = ((input[i] << 3) | (input[i] >> 5)) & 0xff
+    
+    return input
+
+def read_hieroglyphs(filename="C:\\Users\\junus\\Music\\hieroglyphs.txt"):
+    hieroglyphs = []
+    with open(filename, "r", encoding="utf-8") as f:
+        for line in f:
+            hieroglyphs.append(line.strip())
+    return {glyph: index for index, glyph in enumerate(hieroglyphs)}
+
+def memoryInv(input, glyphs):
+    memory = []
+    current_glyph = ""
+    for char in input:
+        current_glyph += char
+        if current_glyph in glyphs:
+            memory.append(glyphs[current_glyph])
+            current_glyph = ""
+    return memory
+
+xor = [0xaa, 0xbb, 0xcc, 0xdd, 0xee]
+sbox = [
+   72,  92, 188, 151, 129, 145,  96, 173, 148, 203, 
+  146,  57,  26,  15,  48,  45,  69, 222,  20, 162, 
+    8,  87, 182, 174, 118, 142, 135,  21,  12, 231, 
+   98, 200,  88,  41, 109, 201, 167, 190,   4,  73, 
+    5, 250, 117, 159, 253, 149, 187,  91, 121, 191, 
+  218, 235,  33, 155, 165, 130,  58,  62, 185, 153, 
+  240, 245, 107,   6, 252, 175, 242, 176, 120, 134, 
+  207, 212, 131,  89,   0,  74, 181, 254, 171,  61, 
+  199, 140, 227, 195, 229,   3,  90,  29, 157,  31, 
+   10,  86, 192, 186,  67,  37, 119,  36, 124, 166, 
+  223, 241,  75,  68, 255,  76, 170, 193, 105, 249, 
+   56, 136, 154, 164, 230,  16, 220, 234, 104, 141, 
+   95,  99, 189, 139, 243, 126, 219, 115,  93, 101, 
+  103, 161, 114, 216, 177,  27, 158, 132,  22,  50, 
+  225, 244, 239, 147, 172, 116,  54, 143, 204,  97, 
+   13,  53,  18, 221,  78, 196, 100,  63,   9, 112, 
+   42, 251, 197, 133,  59,  28,  80,  25, 213, 233, 
+   71,  11, 226, 202, 198, 247, 178, 214, 248,  17, 
+   84, 110, 144, 194, 236, 150,  81, 215, 232,  49, 
+  128, 125,  24,  52, 183,   2, 160, 122, 179, 208, 
+   70, 102,  55,  30, 123,  66, 108,  23, 217,  51, 
+   43,  34, 206, 169, 127, 180,   7, 106,  65,  64, 
+   38,  47, 168, 205, 113, 184,  83,  19,  94, 246, 
+  224,  82,  79, 111, 228, 137,  60, 156, 163, 138, 
+   77,  40,  14, 211, 210, 152, 238,  44,  46, 237, 
+   39,  32,   1,  35,  85, 209
+   ]
+sboxInv = [0] * 256
+
+for i, value in enumerate(sbox):
+    sboxInv[value] = i
+
+with open("C:\\Users\\junus\\Music\\message.txt", "r", encoding="utf-8") as f:
+    cipher = f.read().strip()
+
+memory = memoryInv(cipher, read_hieroglyphs())
+print(memory)
+ouputrunnnn = wmInv(memory)
+print(ouputrunnnn)
+inputwm = runnnnInv(ouputrunnnn)
+print(inputwm)
+plain = wmInv(inputwm)
+print(bytes(plain))
+''''
+
+
+
