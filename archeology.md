@@ -78,7 +78,7 @@ for문으로 hieroglyphs.txt를 256줄까지 읽으며, 각 줄은 255글자까�
 
 이 모든 과정을 역순으로 수행하면 평문을 구할 수 있을 것으로 보인다.
 
-'''
+```
 def wmInv(input):
     inputLen = len(input)
     input = input[::-1]
@@ -160,7 +160,6 @@ inputwm = runnnnInv(ouputrunnnn)
 print(inputwm)
 plain = wmInv(inputwm)
 print(bytes(plain))
-''''
-
+```
 
 
